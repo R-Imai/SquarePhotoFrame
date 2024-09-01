@@ -25,6 +25,12 @@ def parse_arguments():
     type=str,
     help="出力先フォルダ"
   )
+  parser.add_argument(
+    "-o", "--origin",
+    dest="is_origin",
+    action='store_true',
+    help="枠をそのままの色で表示するか"
+  )
   return parser.parse_args(), parser
 
 def resize_image(img):
@@ -62,7 +68,7 @@ def get_bright_colors(colors):
   hsv[2] = 210 if hsv[2] < 210 else hsv[2]
   return hsv_to_bgr(*hsv)
 
-def analysis_image(file_name, output_dir):
+def analysis_image(file_name, output_dir, is_origin):
   CLUSTER_NUM = 3
   img = import_image(file_name)
   img_y = int(img.shape[0])
@@ -70,9 +76,9 @@ def analysis_image(file_name, output_dir):
 
   t_img = np.array(img) if img_x > img_y else np.array(img).transpose(1, 0, 2)
   cluster_centers1 = get_colors_cluster(resize_image(t_img[:int(len(t_img)/3)]), CLUSTER_NUM)
-  color1 = get_bright_colors(cluster_centers1[0])
+  color1 = get_bright_colors(cluster_centers1[0]) if not is_origin else cluster_centers1[0]
   cluster_centers2 = get_colors_cluster(resize_image(t_img[int(len(t_img)*2/3):]), CLUSTER_NUM)
-  color2 = get_bright_colors(cluster_centers2[0])
+  color2 = get_bright_colors(cluster_centers2[0]) if not is_origin else cluster_centers2[0]
 
   if img_x > img_y:
     draw_space_height = int((img_x - img_y)/2)
@@ -93,9 +99,9 @@ def main():
   if args.dir is not None:
     path_list = glob.glob(f"{args.dir}/*jpg")
     for path in tqdm.tqdm(path_list):
-      analysis_image(path, args.output)
+      analysis_image(path, args.output, args.is_origin)
   if args.fig is not None:
-    analysis_image(args.fig, args.output)
+    analysis_image(args.fig, args.output, args.is_origin)
   
 
 if __name__ == '__main__':
